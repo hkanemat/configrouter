@@ -1,0 +1,61 @@
+#!/usr/bin/expect --
+# Expect script to change Cisco router's configuration
+# usage: configrouter routerlist password enablepassword configfile
+
+set timeout 60
+
+# receives list of routers (ip address separated by newline),
+# vty password, router's enable password
+# and config file name from command line
+set routerlist [lindex $argv 0]
+set password [lindex $argv 1]
+set enablepass [lindex $argv 2]
+set configfile [lindex $argv 3]
+
+# if you do not need work log, comment out below
+log_file ./configlog
+
+# main program body starts here
+# first check to see if the usage is correct
+
+if { $argc < 4 } {
+puts "usage: configrouter routerlist tpassword enablepassword configfile\r"
+ exit 1
+}
+
+# procedure to enter router's configuration one line at a time
+# under Cisco router's configuration mode from virtual terminal
+
+proc config_router {config_file} {
+      set file [open $config_file "r"]
+      send "conf t\r"
+      while {[gets $file buffer] != -1} {
+          expect {
+              -re "\(config.*\)#" {
+                  send "$buffer\r"
+              }
+              timeout {
+                  send "end\r"
+              }
+          }
+      }
+       send "end\r"
+       close $file
+}
+
+set rtlist [open "$routerlist" "r"]
+
+while {[gets $rtlist line] !=-1} {
+    spawn telnet $line
+    expect "word: " {send "$password\r"}
+    expect ">" {send "enable\r"}
+    expect "word: " {send "$enablepass\r"}
+
+    config_router $configfile
+
+    close
+}
+
+close $rtlist
+
+# end of script
