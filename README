@@ -1,0 +1,7 @@
+configrouter
+====
+a trivial expect script which configures Cisco IOS router
+
+syntax: configrouter routerlist vtypassword enablepassword configfile
+
+hkanemat(at)gmail(dot)com
